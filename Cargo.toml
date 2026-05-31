@@ -1,0 +1,33 @@
+[package]
+name = "libc-bench"
+version = "0.1.0"
+edition = "2021"
+description = "Precise benchmarking of libc functions (optimized C / naive C) against Rust reimplementations."
+license = "MIT"
+
+[dependencies]
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+proptest = "1"
+
+[build-dependencies]
+cc = "1"
+
+# Maximum optimization for representative measurements.
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+
+# `cargo bench` inherits from release, but we spell it out so it is as
+# aggressive as possible.
+[profile.bench]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+
+[[bench]]
+name = "strlen"
+harness = false
