@@ -11,16 +11,17 @@ behave identically.
 ```
 c_src/*.c             Reference C implementations (naive), compiled by build.rs
 build.rs              Compiles the C (-O3 -march=native -fno-builtin) and links it
-src/ffi.rs            FFI declarations: glibc strlen + our C functions
+src/ffi.rs            FFI declarations: glibc strlen/memcpy + our C functions
 src/strlen.rs         strlen Rust reimplementations + common impl registry
+src/memcpy.rs         memcpy Rust reimplementations + common impl registry
 benches/*.rs          Criterion benchmarks (throughput per input size)
 tests/*.rs            Correctness tests (edge cases, alignments) + property-based
 ```
 
 Each implementation (C or Rust) is exposed through a common signature
-(`StrlenFn`) and registered in `<fn>::implementations()`. Tests **and**
-benchmarks iterate over that same registry: adding an implementation means
-adding it in a single place.
+(`StrlenFn` / `MemcpyFn`) and registered in `<fn>::implementations()`. Tests
+**and** benchmarks iterate over that same registry: adding an implementation
+means adding it in a single place.
 
 Current implementations:
 
@@ -30,19 +31,24 @@ Current implementations:
 | strlen   | `c_naive`    | C    | scalar byte-by-byte loop                 |
 | strlen   | `rust_naive` | Rust | scalar byte-by-byte loop                 |
 | strlen   | `rust_swar`  | Rust | word-at-a-time (SWAR bitwise trick)      |
+| memcpy   | `c_glibc`    | C    | libc `memcpy(3)` (perf reference)        |
+| memcpy   | `c_naive`    | C    | scalar byte-by-byte loop                 |
+| memcpy   | `rust_naive` | Rust | scalar byte-by-byte loop                 |
+| memcpy   | `rust_word`  | Rust | word-at-a-time (unaligned word copies)   |
 
 ## Usage
 
 ```sh
 cargo test                  # correctness (edge cases + property-based)
 cargo bench --bench strlen  # benchmarks -> target/criterion/report/index.html
+cargo bench --bench memcpy
 ```
 
 > Note: `cargo bench` without `--bench <name>` also runs the lib unittest
 > binary, which does not understand Criterion CLI flags. Target a specific
 > bench when passing flags.
 
-## Adding a function (memcpy, strcmp, …)
+## Adding a function (strcmp, memchr, …)
 
 1. Reference C code in `c_src/`, declared in `src/ffi.rs` and compiled via `build.rs`.
 2. Rust reimplementation(s) in a new `src/<fn>.rs` module with an

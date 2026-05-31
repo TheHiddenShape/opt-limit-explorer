@@ -31,3 +31,7 @@ codegen-units = 1
 [[bench]]
 name = "strlen"
 harness = false
+
+[[bench]]
+name = "memcpy"
+harness = false
